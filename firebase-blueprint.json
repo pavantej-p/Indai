@@ -1,0 +1,153 @@
+{
+  "entities": {
+    "UserAccount": {
+      "title": "UserAccount",
+      "description": "Private authenticated user account and network preferences, strictly isolated to the owner.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Firebase Auth UID of the account owner." },
+        "displayName": { "type": "string", "description": "User display name." },
+        "email": { "type": "string", "description": "Private Google account email address." },
+        "photoUrl": { "type": "string", "description": "Profile avatar URL." },
+        "preferredMode": { "type": "string", "enum": ["CREATOR", "CLIENT"], "description": "Default studio posture." },
+        "cityHub": { "type": "string", "description": "Selected Indian tech hub city." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp on creation (FieldValue.serverTimestamp())." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp on update (FieldValue.serverTimestamp())." }
+      },
+      "required": ["userId", "displayName", "preferredMode", "cityHub", "createdAt", "updatedAt"]
+    },
+    "CreatorProfile": {
+      "title": "CreatorProfile",
+      "description": "Public AI freelancer portfolio profile discoverable on the Creators directory and India Hubs Map (contains no PII).",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID matching document ID." },
+        "displayName": { "type": "string", "description": "Creator public name." },
+        "headline": { "type": "string", "description": "Short specialty tagline." },
+        "bio": { "type": "string", "description": "Creator experience summary." },
+        "skills": { "type": "array", "description": "1 to 5 AI specialties from AI_VIDEO, AI_IMAGE, WEB_DEV, CHATBOT_DEV, AUTOMATION." },
+        "cityHub": { "type": "string", "description": "Primary India tech hub name." },
+        "latitude": { "type": "number", "description": "Hub latitude for Google Maps pin." },
+        "longitude": { "type": "number", "description": "Hub longitude for Google Maps pin." },
+        "hourlyRateInr": { "type": "integer", "description": "Indicative hourly rate in INR." },
+        "portfolioUrl": { "type": "string", "description": "Public portfolio or reel link." },
+        "sampleWorkTitle": { "type": "string", "description": "Featured AI project or reel title." },
+        "availableForPaidWork": { "type": "boolean", "description": "Whether creator is open for paid projects." },
+        "visibility": { "type": "string", "enum": ["PUBLIC"], "description": "Directory visibility marker." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp on creation." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp on update." }
+      },
+      "required": ["userId", "displayName", "headline", "skills", "cityHub", "latitude", "longitude", "hourlyRateInr", "availableForPaidWork", "visibility", "createdAt", "updatedAt"]
+    },
+    "PaidProject": {
+      "title": "PaidProject",
+      "description": "Paid AI freelance project shared with creators across Indian hubs and remote teams.",
+      "type": "object",
+      "properties": {
+        "clientId": { "type": "string", "description": "Owner Firebase Auth UID of the project poster." },
+        "clientName": { "type": "string", "description": "Public client or studio name." },
+        "title": { "type": "string", "description": "Project title." },
+        "description": { "type": "string", "description": "Deliverables, AI stack, and scope." },
+        "requiredSkills": { "type": "array", "description": "1 to 5 required AI skills." },
+        "budgetMinInr": { "type": "integer", "description": "Minimum project budget in INR." },
+        "budgetMaxInr": { "type": "integer", "description": "Maximum project budget in INR." },
+        "cityHub": { "type": "string", "description": "Target India hub city." },
+        "latitude": { "type": "number", "description": "Hub latitude for Google Maps pin." },
+        "longitude": { "type": "number", "description": "Hub longitude for Google Maps pin." },
+        "remoteAllowed": { "type": "boolean", "description": "Whether remote creators across India can apply." },
+        "status": { "type": "string", "enum": ["OPEN", "SHORTLISTING", "ASSIGNED", "COMPLETED"], "description": "Project workflow status." },
+        "selectedCreatorId": { "type": "string", "description": "UID of selected freelancer once assigned." },
+        "selectedCreatorName": { "type": "string", "description": "Display name of selected freelancer." },
+        "visibility": { "type": "string", "enum": ["PUBLIC"], "description": "Directory visibility marker." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp on creation." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp on update." }
+      },
+      "required": ["clientId", "clientName", "title", "description", "requiredSkills", "budgetMinInr", "budgetMaxInr", "cityHub", "latitude", "longitude", "remoteAllowed", "status", "visibility", "createdAt", "updatedAt"]
+    },
+    "Conversation": {
+      "title": "Conversation",
+      "description": "Direct message thread between a creator and a project lead/client.",
+      "type": "object",
+      "properties": {
+        "participantIds": { "type": "array", "description": "Two unique participant UIDs." },
+        "creatorId": { "type": "string", "description": "UID of the creator participant." },
+        "creatorName": { "type": "string", "description": "Display name of the creator participant." },
+        "clientId": { "type": "string", "description": "UID of the client/lead participant." },
+        "clientName": { "type": "string", "description": "Display name of the client/lead participant." },
+        "projectId": { "type": "string", "description": "Optional associated PaidProject ID." },
+        "projectTitle": { "type": "string", "description": "Optional associated PaidProject title." },
+        "lastMessage": { "type": "string", "description": "Preview of most recent message." },
+        "lastSenderId": { "type": "string", "description": "UID of the last sender." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp on creation." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp on update." }
+      },
+      "required": ["participantIds", "creatorId", "creatorName", "clientId", "clientName", "lastMessage", "lastSenderId", "createdAt", "updatedAt"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "Individual DM message with optional structured Portfolio Pitch Card.",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string", "description": "UID of the message sender." },
+        "senderName": { "type": "string", "description": "Name of the sender." },
+        "participantIds": { "type": "array", "description": "Denormalized participant UIDs for subcollection read security." },
+        "text": { "type": "string", "description": "Message body." },
+        "messageType": { "type": "string", "enum": ["TEXT", "PORTFOLIO_PITCH"], "description": "Standard text or portfolio pitch card." },
+        "portfolioHeadline": { "type": "string", "description": "Optional attached portfolio headline." },
+        "portfolioCityHub": { "type": "string", "description": "Optional attached portfolio hub." },
+        "portfolioSkills": { "type": "array", "description": "Optional attached portfolio skill tags." },
+        "portfolioRateInr": { "type": "integer", "description": "Optional attached portfolio hourly rate in INR." },
+        "portfolioUrl": { "type": "string", "description": "Optional attached portfolio URL." },
+        "portfolioSampleTitle": { "type": "string", "description": "Optional attached sample work title." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp on creation." }
+      },
+      "required": ["senderId", "senderName", "participantIds", "text", "messageType", "createdAt"]
+    },
+    "ProjectApplication": {
+      "title": "ProjectApplication",
+      "description": "User-owned record of an applied-to paid AI project stored under /users/{userId}/applications/{projectId}.",
+      "type": "object",
+      "properties": {
+        "applicantId": { "type": "string", "description": "UID of the creator who applied." },
+        "projectId": { "type": "string", "description": "Applied PaidProject document ID." },
+        "projectTitle": { "type": "string", "description": "Title of the applied project." },
+        "clientId": { "type": "string", "description": "UID of the client who posted the project." },
+        "clientName": { "type": "string", "description": "Display name of the client." },
+        "conversationId": { "type": "string", "description": "Associated DM thread ID." },
+        "pitchText": { "type": "string", "description": "Intro pitch sent with the application." },
+        "attachedPortfolio": { "type": "boolean", "description": "Whether the creator portfolio card was attached." },
+        "budgetLabel": { "type": "string", "description": "Formatted INR budget range snapshot." },
+        "cityHub": { "type": "string", "description": "Project India tech hub." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp on creation." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp on update." }
+      },
+      "required": ["applicantId", "projectId", "projectTitle", "clientId", "clientName", "conversationId", "pitchText", "attachedPortfolio", "budgetLabel", "cityHub", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserAccount" },
+      "description": "Owner-isolated user accounts and PII."
+    },
+    "/users/{userId}/applications/{projectId}": {
+      "schema": { "$ref": "#/entities/ProjectApplication" },
+      "description": "Owner-isolated history of projects a creator has applied to."
+    },
+    "/creators/{creatorId}": {
+      "schema": { "$ref": "#/entities/CreatorProfile" },
+      "description": "Public AI freelancer portfolio profiles."
+    },
+    "/projects/{projectId}": {
+      "schema": { "$ref": "#/entities/PaidProject" },
+      "description": "Paid AI freelance projects across India."
+    },
+    "/conversations/{conversationId}": {
+      "schema": { "$ref": "#/entities/Conversation" },
+      "description": "Direct message threads between creators and clients."
+    },
+    "/conversations/{conversationId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/ChatMessage" },
+      "description": "Messages and attached portfolio pitch cards inside a conversation."
+    }
+  }
+}

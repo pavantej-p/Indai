@@ -1,0 +1,6 @@
+{
+  "name": "IndiAI Guild",
+  "description": "An AI freelancer network in India connecting creators skilled in AI video, image generation, web dev, chatbots, and automation with paid projects and direct portfolio messaging.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

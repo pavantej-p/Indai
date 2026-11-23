@@ -1,0 +1,283 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: Default deny all reads and writes
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- GLOBAL HELPERS ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidSkillList(skills) {
+      return skills is list &&
+             skills.size() >= 1 &&
+             skills.size() <= 5 &&
+             skills.hasOnly(['AI_VIDEO', 'AI_IMAGE', 'WEB_DEV', 'CHATBOT_DEV', 'AUTOMATION']);
+    }
+
+    // --- VALIDATION BLUEPRINTS ---
+    function isValidUserAccount(data) {
+      return data.userId is string && isValidId(data.userId) &&
+             data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 80 &&
+             data.preferredMode in ['CREATOR', 'CLIENT'] &&
+             data.cityHub is string && data.cityHub.size() >= 2 && data.cityHub.size() <= 40 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time &&
+             (!('email' in data) || (data.email is string && data.email.size() <= 160)) &&
+             (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() <= 500));
+    }
+
+    function isValidCreatorProfile(data) {
+      return data.userId is string && isValidId(data.userId) &&
+             data.displayName is string && data.displayName.size() >= 2 && data.displayName.size() <= 60 &&
+             data.headline is string && data.headline.size() >= 4 && data.headline.size() <= 100 &&
+             isValidSkillList(data.skills) &&
+             data.cityHub is string && data.cityHub.size() >= 2 && data.cityHub.size() <= 40 &&
+             data.latitude is number && data.latitude >= 6.0 && data.latitude <= 38.0 &&
+             data.longitude is number && data.longitude >= 68.0 && data.longitude <= 98.0 &&
+             data.hourlyRateInr is int && data.hourlyRateInr >= 0 && data.hourlyRateInr <= 500000 &&
+             data.availableForPaidWork is bool &&
+             data.visibility == 'PUBLIC' &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time &&
+             (!('bio' in data) || (data.bio is string && data.bio.size() <= 500)) &&
+             (!('portfolioUrl' in data) || (data.portfolioUrl is string && data.portfolioUrl.size() <= 300)) &&
+             (!('sampleWorkTitle' in data) || (data.sampleWorkTitle is string && data.sampleWorkTitle.size() <= 100));
+    }
+
+    function isValidPaidProject(data) {
+      return data.clientId is string && isValidId(data.clientId) &&
+             data.clientName is string && data.clientName.size() >= 2 && data.clientName.size() <= 60 &&
+             data.title is string && data.title.size() >= 4 && data.title.size() <= 100 &&
+             data.description is string && data.description.size() >= 10 && data.description.size() <= 1000 &&
+             isValidSkillList(data.requiredSkills) &&
+             data.budgetMinInr is int && data.budgetMinInr >= 500 && data.budgetMinInr <= 10000000 &&
+             data.budgetMaxInr is int && data.budgetMaxInr >= data.budgetMinInr && data.budgetMaxInr <= 10000000 &&
+             data.cityHub is string && data.cityHub.size() >= 2 && data.cityHub.size() <= 40 &&
+             data.latitude is number && data.latitude >= 6.0 && data.latitude <= 38.0 &&
+             data.longitude is number && data.longitude >= 68.0 && data.longitude <= 98.0 &&
+             data.remoteAllowed is bool &&
+             data.status in ['OPEN', 'SHORTLISTING', 'ASSIGNED', 'COMPLETED'] &&
+             data.visibility == 'PUBLIC' &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time &&
+             (!('selectedCreatorId' in data) || (data.selectedCreatorId is string && isValidId(data.selectedCreatorId))) &&
+             (!('selectedCreatorName' in data) || (data.selectedCreatorName is string && data.selectedCreatorName.size() <= 60));
+    }
+
+    function isValidConversation(data) {
+      return data.participantIds is list &&
+             data.participantIds.size() == 2 &&
+             data.participantIds[0] is string && isValidId(data.participantIds[0]) &&
+             data.participantIds[1] is string && isValidId(data.participantIds[1]) &&
+             data.participantIds[0] != data.participantIds[1] &&
+             data.creatorId is string && data.creatorId in data.participantIds &&
+             data.creatorName is string && data.creatorName.size() >= 1 && data.creatorName.size() <= 60 &&
+             data.clientId is string && data.clientId in data.participantIds &&
+             data.clientName is string && data.clientName.size() >= 1 && data.clientName.size() <= 60 &&
+             data.lastMessage is string && data.lastMessage.size() >= 1 && data.lastMessage.size() <= 500 &&
+             data.lastSenderId is string && data.lastSenderId in data.participantIds &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time &&
+             (!('projectId' in data) || (data.projectId is string && isValidId(data.projectId))) &&
+             (!('projectTitle' in data) || (data.projectTitle is string && data.projectTitle.size() <= 100));
+    }
+
+    function isValidChatMessage(data) {
+      return data.senderId is string && isValidId(data.senderId) &&
+             data.senderName is string && data.senderName.size() >= 1 && data.senderName.size() <= 60 &&
+             data.participantIds is list && data.participantIds.size() == 2 &&
+             data.participantIds[0] is string && data.participantIds[1] is string &&
+             data.senderId in data.participantIds &&
+             data.text is string && data.text.size() >= 1 && data.text.size() <= 1000 &&
+             data.messageType in ['TEXT', 'PORTFOLIO_PITCH'] &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             (!('portfolioHeadline' in data) || (data.portfolioHeadline is string && data.portfolioHeadline.size() <= 100)) &&
+             (!('portfolioCityHub' in data) || (data.portfolioCityHub is string && data.portfolioCityHub.size() <= 40)) &&
+             (!('portfolioSkills' in data) || isValidSkillList(data.portfolioSkills)) &&
+             (!('portfolioRateInr' in data) || (data.portfolioRateInr is int && data.portfolioRateInr >= 0 && data.portfolioRateInr <= 500000)) &&
+             (!('portfolioUrl' in data) || (data.portfolioUrl is string && data.portfolioUrl.size() <= 300)) &&
+             (!('portfolioSampleTitle' in data) || (data.portfolioSampleTitle is string && data.portfolioSampleTitle.size() <= 100));
+    }
+
+    function isValidProjectApplication(data) {
+      return data.applicantId is string && isValidId(data.applicantId) &&
+             data.projectId is string && isValidId(data.projectId) &&
+             data.projectTitle is string && data.projectTitle.size() >= 2 && data.projectTitle.size() <= 100 &&
+             data.clientId is string && isValidId(data.clientId) &&
+             data.clientName is string && data.clientName.size() >= 1 && data.clientName.size() <= 60 &&
+             data.conversationId is string && isValidId(data.conversationId) &&
+             data.pitchText is string && data.pitchText.size() >= 1 && data.pitchText.size() <= 1000 &&
+             data.attachedPortfolio is bool &&
+             data.budgetLabel is string && data.budgetLabel.size() >= 1 && data.budgetLabel.size() <= 60 &&
+             data.cityHub is string && data.cityHub.size() >= 2 && data.cityHub.size() <= 40 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // --- COLLECTION RULES ---
+
+    // 1. Private User Accounts (strict owner-only PII isolation)
+    match /users/{userId} {
+      allow get, list: if isSignedIn() && request.auth.uid == userId;
+
+      allow create: if isSignedIn() &&
+                       isValidId(userId) &&
+                       request.auth.uid == userId &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll(['userId', 'displayName', 'preferredMode', 'cityHub', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'displayName', 'email', 'photoUrl', 'preferredMode', 'cityHub', 'createdAt', 'updatedAt']) &&
+                       isValidUserAccount(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(userId) &&
+                       request.auth.uid == userId &&
+                       isValidUserAccount(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'email', 'photoUrl', 'preferredMode', 'cityHub', 'updatedAt']);
+
+      allow delete: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+
+      match /applications/{projectId} {
+        allow get, list: if isSignedIn() && request.auth.uid == userId;
+
+        allow create: if isSignedIn() &&
+                         isValidId(userId) &&
+                         isValidId(projectId) &&
+                         request.auth.uid == userId &&
+                         incoming().applicantId == request.auth.uid &&
+                         incoming().projectId == projectId &&
+                         incoming().keys().hasAll(['applicantId', 'projectId', 'projectTitle', 'clientId', 'clientName', 'conversationId', 'pitchText', 'attachedPortfolio', 'budgetLabel', 'cityHub', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['applicantId', 'projectId', 'projectTitle', 'clientId', 'clientName', 'conversationId', 'pitchText', 'attachedPortfolio', 'budgetLabel', 'cityHub', 'createdAt', 'updatedAt']) &&
+                         isValidProjectApplication(incoming());
+
+        allow update: if isSignedIn() &&
+                         isValidId(userId) &&
+                         isValidId(projectId) &&
+                         request.auth.uid == userId &&
+                         isValidProjectApplication(incoming()) &&
+                         incoming().applicantId == existing().applicantId &&
+                         incoming().projectId == existing().projectId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['projectTitle', 'clientName', 'conversationId', 'pitchText', 'attachedPortfolio', 'budgetLabel', 'cityHub', 'updatedAt']);
+
+        allow delete: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+      }
+    }
+
+    // 2. Public Creator Portfolios (no PII; list requires visibility == 'PUBLIC' or owner)
+    match /creators/{creatorId} {
+      allow get, list: if isSignedIn() && (existing().visibility == 'PUBLIC' || existing().userId == request.auth.uid);
+
+      allow create: if isSignedIn() &&
+                       isValidId(creatorId) &&
+                       request.auth.uid == creatorId &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll(['userId', 'displayName', 'headline', 'skills', 'cityHub', 'latitude', 'longitude', 'hourlyRateInr', 'availableForPaidWork', 'visibility', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'displayName', 'headline', 'bio', 'skills', 'cityHub', 'latitude', 'longitude', 'hourlyRateInr', 'portfolioUrl', 'sampleWorkTitle', 'availableForPaidWork', 'visibility', 'createdAt', 'updatedAt']) &&
+                       isValidCreatorProfile(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(creatorId) &&
+                       request.auth.uid == creatorId &&
+                       isValidCreatorProfile(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'headline', 'bio', 'skills', 'cityHub', 'latitude', 'longitude', 'hourlyRateInr', 'portfolioUrl', 'sampleWorkTitle', 'availableForPaidWork', 'visibility', 'updatedAt']);
+
+      allow delete: if isSignedIn() && isValidId(creatorId) && request.auth.uid == creatorId;
+    }
+
+    // 3. Paid AI Projects (client-owned writes with terminal COMPLETED lock)
+    match /projects/{projectId} {
+      allow get, list: if isSignedIn() && (existing().visibility == 'PUBLIC' || existing().clientId == request.auth.uid);
+
+      allow create: if isSignedIn() &&
+                       isValidId(projectId) &&
+                       incoming().clientId == request.auth.uid &&
+                       incoming().status == 'OPEN' &&
+                       incoming().keys().hasAll(['clientId', 'clientName', 'title', 'description', 'requiredSkills', 'budgetMinInr', 'budgetMaxInr', 'cityHub', 'latitude', 'longitude', 'remoteAllowed', 'status', 'visibility', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['clientId', 'clientName', 'title', 'description', 'requiredSkills', 'budgetMinInr', 'budgetMaxInr', 'cityHub', 'latitude', 'longitude', 'remoteAllowed', 'status', 'selectedCreatorId', 'selectedCreatorName', 'visibility', 'createdAt', 'updatedAt']) &&
+                       isValidPaidProject(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(projectId) &&
+                       isValidPaidProject(incoming()) &&
+                       existing().clientId == request.auth.uid &&
+                       existing().status != 'COMPLETED' &&
+                       incoming().clientId == existing().clientId &&
+                       incoming().createdAt == existing().createdAt &&
+                       (
+                         // Action 1: Select/assign freelancer or advance status
+                         (incoming().status in ['SHORTLISTING', 'ASSIGNED', 'COMPLETED'] &&
+                          incoming().diff(existing()).affectedKeys().hasOnly(['status', 'selectedCreatorId', 'selectedCreatorName', 'updatedAt'])) ||
+                         // Action 2: Edit project details
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description', 'requiredSkills', 'budgetMinInr', 'budgetMaxInr', 'cityHub', 'latitude', 'longitude', 'remoteAllowed', 'status', 'updatedAt'])
+                       );
+
+      allow delete: if isSignedIn() && isValidId(projectId) && existing().clientId == request.auth.uid;
+    }
+
+    // 4. Direct Message Conversations & Messages Subcollection
+    match /conversations/{conversationId} {
+      allow get, list: if isSignedIn() && request.auth.uid in existing().participantIds;
+
+      allow create: if isSignedIn() &&
+                       isValidId(conversationId) &&
+                       isValidConversation(incoming()) &&
+                       request.auth.uid in incoming().participantIds &&
+                       incoming().lastSenderId == request.auth.uid &&
+                       incoming().keys().hasAll(['participantIds', 'creatorId', 'creatorName', 'clientId', 'clientName', 'lastMessage', 'lastSenderId', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['participantIds', 'creatorId', 'creatorName', 'clientId', 'clientName', 'projectId', 'projectTitle', 'lastMessage', 'lastSenderId', 'createdAt', 'updatedAt']);
+
+      allow update: if isSignedIn() &&
+                       isValidId(conversationId) &&
+                       isValidConversation(incoming()) &&
+                       request.auth.uid in existing().participantIds &&
+                       incoming().participantIds == existing().participantIds &&
+                       incoming().creatorId == existing().creatorId &&
+                       incoming().clientId == existing().clientId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().lastSenderId == request.auth.uid &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['lastMessage', 'lastSenderId', 'projectId', 'projectTitle', 'updatedAt']);
+
+      allow delete: if false;
+
+      match /messages/{messageId} {
+        allow get, list: if isSignedIn() && request.auth.uid in existing().participantIds;
+
+        allow create: if isSignedIn() &&
+                         isValidId(conversationId) &&
+                         isValidId(messageId) &&
+                         isValidChatMessage(incoming()) &&
+                         incoming().senderId == request.auth.uid &&
+                         request.auth.uid in incoming().participantIds &&
+                         incoming().keys().hasAll(['senderId', 'senderName', 'participantIds', 'text', 'messageType', 'createdAt']) &&
+                         incoming().keys().hasOnly(['senderId', 'senderName', 'participantIds', 'text', 'messageType', 'portfolioHeadline', 'portfolioCityHub', 'portfolioSkills', 'portfolioRateInr', 'portfolioUrl', 'portfolioSampleTitle', 'createdAt']) &&
+                         exists(/databases/$(database)/documents/conversations/$(conversationId)) &&
+                         request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds &&
+                         incoming().participantIds == get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
+
+        allow update, delete: if false;
+      }
+    }
+  }
+}

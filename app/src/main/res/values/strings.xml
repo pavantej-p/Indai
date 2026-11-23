@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">IndiAI Guild</string>
+    <string name="tagline">India\'s AI Creator &amp; Freelancer Network</string>
+    <string name="sign_in_google">Sign in with Google</string>
+    <string name="nav_projects">Projects</string>
+    <string name="nav_creators">Creators</string>
+    <string name="nav_inbox">Inbox</string>
+    <string name="nav_studio">Profile</string>
+    <string name="post_project">Post Paid Project</string>
+    <string name="dm_with_portfolio">DM with Portfolio</string>
+    <string name="attach_portfolio">Attach Portfolio</string>
+</resources>
