@@ -4,7 +4,7 @@
 // Firebase Console -> Authentication -> Settings -> Authorized domains
 
 export const FIREBASE_WEB_CONFIG = {
-  apiKey: "AlzaSyDDnlffPOH6tN9CHe74SKMnAbX
+  apiKey: "AIzaSyDDnlffP0H6tN9CHe74SKMnAbX6TcLSTuU
 
 6TCLSTUU",
   authDomain: "gen-lang-client-0370058646.firebaseapp.com",
