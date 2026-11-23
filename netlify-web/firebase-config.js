@@ -6,7 +6,6 @@
 export const FIREBASE_WEB_CONFIG = {
   apiKey:"AIzaSyDDnlffP0H6tN9CHe74SKMnAbX6TcLSTuU",
 
-6TCLSTUU",
   authDomain: "gen-lang-client-0370058646.firebaseapp.com",
   projectId: "gen-lang-client-0370058646",
   storageBucket: "gen-lang-client-0370058646.firebasestorage.app",
