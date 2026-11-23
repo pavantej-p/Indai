@@ -4,12 +4,14 @@
 // Firebase Console -> Authentication -> Settings -> Authorized domains
 
 export const FIREBASE_WEB_CONFIG = {
-  apiKey: "YOUR_FIREBASE_WEB_API_KEY",
+  apiKey: "AlzaSyDDnlffPOH6tN9CHe74SKMnAbX
+
+6TCLSTUU",
   authDomain: "gen-lang-client-0370058646.firebaseapp.com",
   projectId: "gen-lang-client-0370058646",
   storageBucket: "gen-lang-client-0370058646.firebasestorage.app",
   messagingSenderId: "44943611520",
-  appId: "YOUR_FIREBASE_WEB_APP_ID"
+  appId: "1:44943611520:web:80bab124ade53d12b63865"
 };
 
 // Matches the named Firestore database used by the Android app
